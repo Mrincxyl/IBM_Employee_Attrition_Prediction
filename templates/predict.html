@@ -1,0 +1,1664 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AttritionIQ — an educational employee attrition prediction interface powered by a trained Logistic Regression pipeline.">
+    <meta name="theme-color" content="#f3f0e8">
+    <title>Inference Engine — AttritionIQ</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --paper: #f3f0e8;
+            --paper-deep: #e8e4d9;
+            --ink: #20231f;
+            --muted: #77796f;
+            --line: #c8c6ba;
+            --line-dark: #85867a;
+            --acid: #d9f263;
+            --red: #c6402e;
+            --green: #3d684c;
+            --white: #fbfaf6;
+
+            --serif: "Instrument Serif", Georgia, serif;
+            --sans: "Work Sans", sans-serif;
+            --mono: "JetBrains Mono", monospace;
+
+            --page-width: 1440px;
+            --gutter: clamp(20px, 5vw, 76px);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 90px;
+        }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: var(--sans);
+            font-size: 14px;
+            line-height: 1.65;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::before {
+            position: fixed;
+            z-index: 20;
+            inset: 0;
+            content: "";
+            pointer-events: none;
+            opacity: 0.13;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.24'/%3E%3C/svg%3E");
+        }
+
+        ::selection {
+            background: var(--acid);
+            color: var(--ink);
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button,
+        a,
+        select,
+        input {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 2px solid var(--green);
+            outline-offset: 4px;
+        }
+
+        button {
+            color: inherit;
+        }
+
+        svg {
+            display: block;
+            flex-shrink: 0;
+        }
+
+        .mono,
+        .eyebrow,
+        .nav-index,
+        .section-number,
+        .field-label,
+        .tag,
+        .micro-label,
+        .metric-caption {
+            font-family: var(--mono);
+            text-transform: uppercase;
+            letter-spacing: 0.045em;
+        }
+
+        .eyebrow {
+            font-size: 10px;
+            line-height: 1.6;
+            font-weight: 600;
+        }
+
+        .shell {
+            width: min(100%, var(--page-width));
+            margin-inline: auto;
+            padding-inline: var(--gutter);
+        }
+
+        /* Navigation */
+
+        .navbar {
+            position: sticky;
+            z-index: 30;
+            top: 0;
+            border-bottom: 1px solid var(--ink);
+            background: rgba(243, 240, 232, 0.95);
+            backdrop-filter: blur(12px);
+        }
+
+        .nav-inner {
+            min-height: 76px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 28px;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 11px;
+            flex-shrink: 0;
+        }
+
+        .brand-mark {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            background: var(--ink);
+            color: var(--acid);
+            transition: background 180ms ease, transform 180ms ease;
+        }
+
+        .brand:hover .brand-mark {
+            background: var(--red);
+            transform: rotate(-5deg);
+        }
+
+        .brand-name {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.075em;
+        }
+
+        .brand-name span {
+            font-family: var(--serif);
+            font-weight: 400;
+            font-style: italic;
+            font-size: 22px;
+            letter-spacing: -0.04em;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: clamp(16px, 3vw, 38px);
+        }
+
+        .nav-links a,
+        .nav-current {
+            font-size: 11px;
+            font-weight: 600;
+            transition: opacity 180ms ease;
+        }
+
+        .nav-links a {
+            color: var(--muted);
+        }
+
+        .nav-links a:hover {
+            color: var(--ink);
+        }
+
+        .nav-current {
+            padding: 8px 11px;
+            border: 1px solid var(--ink);
+            background: var(--acid);
+            color: var(--ink);
+        }
+
+        .nav-index {
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        /* Page introduction */
+
+        .page-intro {
+            padding-top: clamp(35px, 6vw, 82px);
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--ink);
+        }
+
+        .back-link {
+            width: fit-content;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 600;
+            transition: color 180ms ease, gap 180ms ease;
+        }
+
+        .back-link:hover {
+            color: var(--ink);
+            gap: 14px;
+        }
+
+        .intro-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+            align-items: end;
+            gap: 44px;
+            margin-top: 38px;
+        }
+
+        .section-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .section-tag::before {
+            width: 19px;
+            height: 1px;
+            content: "";
+            background: var(--red);
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin-top: 0;
+        }
+
+        h1 {
+            max-width: 850px;
+            margin: 15px 0 14px;
+            font-family: var(--serif);
+            font-size: clamp(54px, 8.5vw, 112px);
+            font-weight: 400;
+            line-height: 0.89;
+            letter-spacing: -0.045em;
+        }
+
+        h1 em {
+            color: var(--red);
+            font-weight: 400;
+        }
+
+        .intro-copy {
+            max-width: 620px;
+            margin: 0;
+            color: #55584f;
+            font-size: 13px;
+            line-height: 1.85;
+        }
+
+        .intro-aside {
+            padding: 0 0 5px 22px;
+            border-left: 1px solid var(--line-dark);
+        }
+
+        .aside-number {
+            display: block;
+            margin-bottom: 8px;
+            font-family: var(--serif);
+            font-size: 57px;
+            line-height: 1;
+            letter-spacing: -0.04em;
+        }
+
+        .aside-caption {
+            max-width: 210px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.7;
+        }
+
+        .metadata-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 30px;
+        }
+
+        .tag {
+            padding: 7px 10px;
+            border: 1px solid var(--line-dark);
+            font-size: 9px;
+            font-weight: 500;
+        }
+
+        .tag-primary {
+            border-color: var(--ink);
+            background: var(--ink);
+            color: var(--paper);
+        }
+
+        /* Main asymmetric layout */
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 270px;
+            align-items: start;
+            gap: clamp(32px, 5vw, 76px);
+            padding-top: 34px;
+            padding-bottom: 92px;
+        }
+
+        .form-panel {
+            min-width: 0;
+        }
+
+        .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 22px;
+            padding-bottom: 23px;
+            border-bottom: 1px solid var(--ink);
+        }
+
+        .panel-heading h2 {
+            margin: 0 0 6px;
+            font-family: var(--serif);
+            font-size: clamp(31px, 3vw, 43px);
+            font-weight: 400;
+            line-height: 1;
+            letter-spacing: -0.025em;
+        }
+
+        .panel-heading p {
+            max-width: 470px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        .required-label {
+            flex-shrink: 0;
+            padding-top: 6px;
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 9px;
+            text-align: right;
+        }
+
+        .asterisk {
+            color: var(--red);
+            font-weight: 700;
+        }
+
+        /* Errors */
+
+        .error-banner {
+            display: flex;
+            gap: 13px;
+            margin-top: 23px;
+            padding: 17px;
+            border: 1px solid var(--red);
+            background: #f7e7e2;
+        }
+
+        .error-icon {
+            color: var(--red);
+        }
+
+        .error-content strong {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 12px;
+        }
+
+        .error-content p {
+            margin: 0;
+            color: #754237;
+            font-size: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        /* Form sections */
+
+        .inference-form {
+            margin: 0;
+        }
+
+        .form-section {
+            min-width: 0;
+            margin: 0;
+            padding: 29px 0 31px;
+            border: 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .form-section legend {
+            float: left;
+            width: 100%;
+            padding: 0;
+            margin: 0 0 24px;
+        }
+
+        .form-section legend + * {
+            clear: both;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .section-number {
+            display: grid;
+            width: 35px;
+            height: 35px;
+            flex-shrink: 0;
+            place-items: center;
+            border: 1px solid var(--line-dark);
+            font-size: 10px;
+            transition: background 180ms ease, border-color 180ms ease;
+        }
+
+        .form-section:focus-within .section-number {
+            background: var(--acid);
+            border-color: var(--ink);
+        }
+
+        .section-title h3 {
+            margin: 0 0 4px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .section-title p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 21px 18px;
+        }
+
+        .form-group {
+            min-width: 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4d5048;
+            font-size: 10px;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .field-label {
+            display: block;
+            margin-bottom: 7px;
+            color: var(--muted);
+            font-size: 9px;
+        }
+
+        .input-control,
+        .select-control {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            height: 44px;
+            padding: 0 12px;
+            border: 1px solid var(--line);
+            border-radius: 0;
+            background: rgba(251, 250, 246, 0.62);
+            color: var(--ink);
+            font-family: var(--mono);
+            font-size: 11px;
+            transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+        }
+
+        .input-control::placeholder {
+            color: #a4a397;
+        }
+
+        .input-control:hover,
+        .select-control:hover {
+            border-color: var(--line-dark);
+        }
+
+        .input-control:focus,
+        .select-control:focus {
+            border-color: var(--ink);
+            outline: none;
+            background: var(--white);
+            box-shadow: inset 3px 0 0 var(--acid);
+        }
+
+        .select-control {
+            padding-right: 28px;
+            cursor: pointer;
+        }
+
+        .field-help {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 10px;
+            line-height: 1.55;
+        }
+
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 22px;
+            padding-top: 25px;
+        }
+
+        .action-note {
+            max-width: 230px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 10px;
+            line-height: 1.7;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .button {
+            min-height: 47px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 0 17px;
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+        }
+
+        .button:active {
+            transform: translateY(1px);
+        }
+
+        .button-secondary {
+            background: transparent;
+        }
+
+        .button-secondary:hover {
+            background: var(--paper-deep);
+        }
+
+        .button-primary {
+            background: var(--ink);
+            color: var(--paper);
+        }
+
+        .button-primary:hover {
+            background: var(--acid);
+            color: var(--ink);
+        }
+
+        .button-primary:disabled {
+            cursor: wait;
+            opacity: 0.7;
+        }
+
+        /* Results */
+
+        .prediction-result {
+            margin-top: 38px;
+            padding: clamp(20px, 3vw, 32px);
+            border: 1px solid var(--ink);
+            background: var(--white);
+            animation: result-enter 420ms ease both;
+        }
+
+        .prediction-result.result-alert {
+            border-top: 5px solid var(--red);
+        }
+
+        .prediction-result.result-normal {
+            border-top: 5px solid var(--green);
+        }
+
+        .result-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 21px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .result-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--mono);
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .result-status::before {
+            width: 8px;
+            height: 8px;
+            content: "";
+            background: currentColor;
+        }
+
+        .result-alert .result-status {
+            color: var(--red);
+        }
+
+        .result-normal .result-status {
+            color: var(--green);
+        }
+
+        .result-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 25px 0;
+        }
+
+        .result-metric {
+            min-width: 0;
+        }
+
+        .metric-caption {
+            display: block;
+            margin-bottom: 9px;
+            color: var(--muted);
+            font-size: 9px;
+        }
+
+        .metric-value {
+            display: block;
+            font-family: var(--serif);
+            font-size: clamp(35px, 5vw, 56px);
+            line-height: 1;
+            letter-spacing: -0.03em;
+            overflow-wrap: anywhere;
+        }
+
+        .metric-value.highlight {
+            color: var(--red);
+        }
+
+        .probability-heading {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 9px;
+            font-family: var(--mono);
+            font-size: 9px;
+        }
+
+        .probability-track {
+            height: 8px;
+            overflow: hidden;
+            background: var(--paper-deep);
+        }
+
+        .probability-fill {
+            width: 0;
+            height: 100%;
+            background: var(--red);
+            transition: width 650ms cubic-bezier(.2, .75, .25, 1);
+        }
+
+        .result-normal .probability-fill {
+            background: var(--green);
+        }
+
+        .result-disclaimer {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            margin: 22px 0 0;
+            padding-top: 16px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 10px;
+            line-height: 1.8;
+        }
+
+        .result-disclaimer svg {
+            margin-top: 3px;
+        }
+
+        /* Editorial sidebar */
+
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 31px;
+            padding-top: 4px;
+        }
+
+        .side-section {
+            padding-top: 15px;
+            border-top: 1px solid var(--ink);
+        }
+
+        .side-section h3 {
+            margin: 13px 0 9px;
+            font-family: var(--serif);
+            font-size: 31px;
+            font-weight: 400;
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+        }
+
+        .side-intro {
+            margin: 0 0 18px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        .guidance-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .guidance-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 11px;
+            padding: 14px 0;
+            border-top: 1px solid var(--line);
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        .guidance-list svg {
+            margin-top: 3px;
+            color: var(--green);
+        }
+
+        .guidance-list strong {
+            font-weight: 700;
+        }
+
+        .schema-section {
+            padding: 21px;
+            background: var(--ink);
+            color: var(--paper);
+        }
+
+        .schema-section .section-tag {
+            color: #b7b8ab;
+        }
+
+        .schema-section h3 {
+            margin: 13px 0 21px;
+            font-family: var(--serif);
+            font-size: 34px;
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .schema-row {
+            padding: 13px 0;
+            border-top: 1px solid #4c5047;
+        }
+
+        .schema-label {
+            display: block;
+            margin-bottom: 5px;
+            color: #b7b8ab;
+            font-family: var(--mono);
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+
+        .schema-value {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .schema-note {
+            margin: 13px 0 0;
+            color: #b7b8ab;
+            font-size: 10px;
+            line-height: 1.8;
+        }
+
+        .responsible-note {
+            padding: 17px 0 0;
+            border-top: 1px solid var(--red);
+        }
+
+        .responsible-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 10px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .responsible-title svg {
+            color: var(--red);
+        }
+
+        .responsible-note p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.85;
+        }
+
+        /* Footer */
+
+        .footer {
+            border-top: 1px solid var(--ink);
+        }
+
+        .footer-inner {
+            min-height: 94px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding-block: 22px;
+        }
+
+        .footer-copy {
+            margin: 0;
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .footer-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            font-weight: 700;
+            transition: gap 180ms ease;
+        }
+
+        .footer-link:hover {
+            gap: 13px;
+        }
+
+        /* Motion and scroll */
+
+        .scroll-progress {
+            position: fixed;
+            z-index: 50;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--red);
+            pointer-events: none;
+        }
+
+        .submit-indicator {
+            display: none;
+            width: 13px;
+            height: 13px;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spin 700ms linear infinite;
+        }
+
+        .button-primary.is-loading .submit-indicator {
+            display: block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes result-enter {
+            from {
+                opacity: 0;
+                transform: translateY(9px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--paper-deep);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            border: 2px solid var(--paper-deep);
+            background: #8c8c7f;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--ink);
+        }
+
+        /* Responsive */
+
+        @media (max-width: 1000px) {
+            .main-layout {
+                grid-template-columns: minmax(0, 1fr) 230px;
+                gap: 30px;
+            }
+
+            .form-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .intro-grid {
+                gap: 25px;
+            }
+        }
+
+        @media (max-width: 760px) {
+            :root {
+                --gutter: 23px;
+            }
+
+            .nav-inner {
+                min-height: 67px;
+            }
+
+            .nav-links {
+                gap: 14px;
+            }
+
+            .nav-links a:first-child,
+            .nav-index {
+                display: none;
+            }
+
+            .intro-grid {
+                grid-template-columns: 1fr;
+                gap: 25px;
+                margin-top: 30px;
+            }
+
+            .intro-aside {
+                max-width: 400px;
+            }
+
+            .main-layout {
+                grid-template-columns: 1fr;
+                gap: 46px;
+            }
+
+            .side-panel {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                align-items: start;
+                gap: 27px;
+            }
+
+            .responsible-note {
+                grid-column: 1 / -1;
+            }
+
+            .schema-section {
+                height: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --gutter: 18px;
+            }
+
+            .brand-name {
+                font-size: 14px;
+            }
+
+            .brand-name span {
+                font-size: 20px;
+            }
+
+            .nav-links {
+                gap: 8px;
+            }
+
+            .nav-links a {
+                font-size: 10px;
+            }
+
+            .nav-current {
+                padding: 7px;
+                font-size: 9px;
+            }
+
+            h1 {
+                font-size: clamp(49px, 14vw, 68px);
+            }
+
+            .page-intro {
+                padding-top: 33px;
+            }
+
+            .panel-heading {
+                flex-direction: column;
+                gap: 9px;
+            }
+
+            .required-label {
+                text-align: left;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 17px;
+            }
+
+            .form-section {
+                padding-block: 25px;
+            }
+
+            .form-section legend {
+                margin-bottom: 20px;
+            }
+
+            .form-actions {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .action-note {
+                max-width: none;
+            }
+
+            .action-buttons {
+                display: grid;
+                grid-template-columns: 1fr;
+            }
+
+            .button {
+                width: 100%;
+            }
+
+            .side-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .responsible-note {
+                grid-column: auto;
+            }
+
+            .result-body {
+                gap: 12px;
+            }
+
+            .metric-value {
+                font-size: 38px;
+            }
+
+            .footer-inner {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+     
+        .footer {
+            background-color: #010101;
+        }
+
+        .footer,
+        .footer a,
+        .footer p,
+        .footer .brand-name,
+        .footer .brand-mark {
+            color: rgb(253, 252, 252);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="prediction-page">
+    <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+    <nav class="navbar" aria-label="Main navigation">
+        <div class="shell nav-inner">
+            <a class="brand" href="{{ url_for('home') }}" aria-label="AttritionIQ home">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
+                        <path d="M3 17l6-6 4 4 8-9"></path>
+                        <path d="M15 6h6v6"></path>
+                    </svg>
+                </span>
+                <span class="brand-name">Attrition<span>IQ.</span></span>
+            </a>
+
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}">Overview</a>
+                <a href="{{ url_for('home') }}#features">Model inputs</a>
+                <span class="nav-current" aria-current="page">Inference</span>
+            </div>
+
+            <span class="nav-index">PROJECT / 01—02</span>
+        </div>
+    </nav>
+
+    <header class="page-intro">
+        <div class="shell">
+            <a class="back-link" href="{{ url_for('home') }}">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path d="M19 12H5M12 19l-7-7 7-7"></path>
+                </svg>
+                Return to model overview
+            </a>
+
+            <div class="intro-grid">
+                <div>
+                    <span class="section-tag eyebrow">Employee analytics / inference engine</span>
+                    <h1>Understand the<br>possibility of <em>leaving.</em></h1>
+                    <p class="intro-copy">
+                        Explore an employee attrition prediction using the IBM HR Analytics dataset.
+                        Enter the employee attributes below to run the trained Logistic Regression
+                        pipeline and inspect its predicted class and estimated probability.
+                    </p>
+
+                    <div class="metadata-strip" aria-label="Model details">
+                        <span class="tag tag-primary">Logistic regression</span>
+                        <span class="tag">Binary classification</span>
+                        <span class="tag">Flask · Scikit-learn</span>
+                    </div>
+                </div>
+
+                <aside class="intro-aside" aria-label="Dataset overview">
+                    <span class="aside-number">1,470</span>
+                    <p class="aside-caption">
+                        Employee records in the IBM HR Analytics dataset used for this educational project.
+                    </p>
+                    <p class="eyebrow" style="margin:18px 0 0;color:var(--muted)">Target variable / Attrition</p>
+                </aside>
+            </div>
+        </div>
+    </header>
+
+    <main class="shell main-layout">
+        <section class="form-panel" aria-labelledby="formHeading">
+            <div class="panel-heading">
+                <div>
+                    <span class="section-tag eyebrow">Input workspace / 01</span>
+                    <h2 id="formHeading">Employee feature vector</h2>
+                    <p>Complete each field using values supported by the training dataset. All fields are required.</p>
+                </div>
+                <span class="required-label"><span class="asterisk">*</span> Required fields</span>
+            </div>
+
+            {% if error %}
+            <div class="error-banner" role="alert" aria-live="assertive">
+                <span class="error-icon" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M12 7v6m0 4h.01"></path>
+                    </svg>
+                </span>
+                <div class="error-content">
+                    <strong>Prediction could not be completed</strong>
+                    <p>{{ error }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('predict') }}" class="inference-form" id="inferenceForm">
+                <!-- Section 01 -->
+                <fieldset class="form-section">
+                    <legend>
+                        <span class="section-title">
+                            <span class="section-number">01</span>
+                            <span>
+                                <h3>Personal &amp; work context</h3>
+                                <p>Demographics, travel and work arrangements</p>
+                            </span>
+                        </span>
+                    </legend>
+
+                    <div class="form-grid">
+                        {% for feature in ["Age", "Gender", "MaritalStatus", "BusinessTravel", "DistanceFromHome", "OverTime"] %}
+                        <div class="form-group">
+                            <label for="{{ feature }}">{{ feature.replace('_', ' ') }} <span class="asterisk">*</span></label>
+                            {% if feature in categorical_options %}
+                            <select class="select-control" id="{{ feature }}" name="{{ feature }}" required>
+                                <option value="" disabled {% if not request.form.get(feature) %}selected{% endif %}>Choose an option</option>
+                                {% for option in categorical_options[feature] %}
+                                <option value="{{ option }}" {% if request.form.get(feature) == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                            {% else %}
+                            <input class="input-control" type="number" id="{{ feature }}" name="{{ feature }}"
+                                   min="{{ 18 if feature == 'Age' else 0 }}"
+                                   max="{{ 100 if feature == 'Age' else 29 }}"
+                                   step="1" required inputmode="numeric"
+                                   placeholder="{{ 'e.g. 35' if feature == 'Age' else 'e.g. 10' }}"
+                                   value="{{ request.form.get(feature, '') }}">
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <!-- Section 02 -->
+                <fieldset class="form-section">
+                    <legend>
+                        <span class="section-title">
+                            <span class="section-number">02</span>
+                            <span>
+                                <h3>Role &amp; education</h3>
+                                <p>Department, job family and career placement</p>
+                            </span>
+                        </span>
+                    </legend>
+
+                    <div class="form-grid">
+                        {% for feature in ["Department", "JobRole", "EducationField", "Education", "JobLevel", "NumCompaniesWorked"] %}
+                        <div class="form-group">
+                            <label for="{{ feature }}">{{ feature.replace('_', ' ') }} <span class="asterisk">*</span></label>
+                            {% if feature in categorical_options %}
+                            <select class="select-control" id="{{ feature }}" name="{{ feature }}" required>
+                                <option value="" disabled {% if not request.form.get(feature) %}selected{% endif %}>Choose an option</option>
+                                {% for option in categorical_options[feature] %}
+                                <option value="{{ option }}" {% if request.form.get(feature) == option %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                            {% else %}
+                            <input class="input-control" type="number" id="{{ feature }}" name="{{ feature }}"
+                                   min="0" max="{{ 9 if feature == 'NumCompaniesWorked' else 5 }}"
+                                   step="1" required inputmode="numeric"
+                                   placeholder="Enter a value"
+                                   value="{{ request.form.get(feature, '') }}">
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <!-- Section 03 -->
+                <fieldset class="form-section">
+                    <legend>
+                        <span class="section-title">
+                            <span class="section-number">03</span>
+                            <span>
+                                <h3>Experience &amp; tenure</h3>
+                                <p>Career duration and time within the organization</p>
+                            </span>
+                        </span>
+                    </legend>
+
+                    <div class="form-grid">
+                        {% for feature in ["TotalWorkingYears", "YearsAtCompany", "YearsInCurrentRole", "YearsSinceLastPromotion", "YearsWithCurrManager"] %}
+                        <div class="form-group">
+                            <label for="{{ feature }}">{{ feature.replace('_', ' ') }} <span class="asterisk">*</span></label>
+                            <input class="input-control" type="number" id="{{ feature }}" name="{{ feature }}"
+                                   min="0" max="40" step="1" required inputmode="numeric"
+                                   placeholder="Years"
+                                   value="{{ request.form.get(feature, '') }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <!-- Section 04 -->
+                <fieldset class="form-section">
+                    <legend>
+                        <span class="section-title">
+                            <span class="section-number">04</span>
+                            <span>
+                                <h3>Satisfaction &amp; engagement</h3>
+                                <p>Ordinal ratings and stock-option level</p>
+                            </span>
+                        </span>
+                    </legend>
+
+                    <div class="form-grid">
+                        {% for feature in ["EnvironmentSatisfaction", "JobInvolvement", "JobSatisfaction", "RelationshipSatisfaction", "WorkLifeBalance"] %}
+                        <div class="form-group">
+                            <label for="{{ feature }}">{{ feature.replace('_', ' ') }} <span class="asterisk">*</span></label>
+                            <select class="select-control" id="{{ feature }}" name="{{ feature }}" required>
+                                <option value="" disabled {% if not request.form.get(feature) %}selected{% endif %}>Choose a rating</option>
+                                {% for option in [1, 2, 3, 4] %}
+                                <option value="{{ option }}" {% if request.form.get(feature, '') == option|string %}selected{% endif %}>
+                                    {{ option }} — {% if option == 1 %}Low{% elif option == 2 %}Medium{% elif option == 3 %}High{% else %}Very high{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endfor %}
+
+                        <div class="form-group">
+                            <label for="StockOptionLevel">Stock option level <span class="asterisk">*</span></label>
+                            <select class="select-control" id="StockOptionLevel" name="StockOptionLevel" required>
+                                <option value="" disabled {% if request.form.get('StockOptionLevel', '') == '' %}selected{% endif %}>Choose a level</option>
+                                {% for option in [0, 1, 2, 3] %}
+                                <option value="{{ option }}" {% if request.form.get('StockOptionLevel', '') == option|string %}selected{% endif %}>Level {{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Section 05 -->
+                <fieldset class="form-section">
+                    <legend>
+                        <span class="section-title">
+                            <span class="section-number">05</span>
+                            <span>
+                                <h3>Compensation &amp; development</h3>
+                                <p>Income, salary growth and recent training</p>
+                            </span>
+                        </span>
+                    </legend>
+
+                    <div class="form-grid">
+                        {% for feature in ["MonthlyIncome", "PercentSalaryHike", "PerformanceRating", "TrainingTimesLastYear"] %}
+                        <div class="form-group">
+                            <label for="{{ feature }}">{{ feature.replace('_', ' ') }} <span class="asterisk">*</span></label>
+                            {% if feature == "PerformanceRating" %}
+                            <select class="select-control" id="{{ feature }}" name="{{ feature }}" required>
+                                <option value="" disabled {% if not request.form.get(feature) %}selected{% endif %}>Choose a rating</option>
+                                {% for option in [3, 4] %}
+                                <option value="{{ option }}" {% if request.form.get(feature, '') == option|string %}selected{% endif %}>
+                                    {{ option }} — {% if option == 3 %}Excellent{% else %}Outstanding{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% else %}
+                            <input class="input-control" type="number" id="{{ feature }}" name="{{ feature }}"
+                                   min="0" max="{{ 100000 if feature == 'MonthlyIncome' else (100 if feature == 'PercentSalaryHike' else 6) }}"
+                                   step="1" required inputmode="numeric"
+                                   placeholder="{{ 'Monthly amount' if feature == 'MonthlyIncome' else ('Percentage' if feature == 'PercentSalaryHike' else 'Training sessions') }}"
+                                   value="{{ request.form.get(feature, '') }}">
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <div class="form-actions">
+                    <p class="action-note">Review the submitted values before running the model. Predictions are statistical estimates, not certainties.</p>
+
+                    <div class="action-buttons">
+                        <a class="button button-secondary" href="{{ url_for('predict') }}">Reset fields</a>
+                        <button class="button button-primary" id="submitButton" type="submit">
+                            <span class="submit-text">Run prediction</span>
+                            <span class="submit-indicator" aria-hidden="true"></span>
+                            <svg class="submit-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                <path d="M5 12h14m-7-7 7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            {% if prediction %}
+            <section class="prediction-result {% if probability > 0.5 %}result-alert{% else %}result-normal{% endif %}"
+                     id="predictionResult" aria-labelledby="resultHeading" aria-live="polite">
+                <div class="result-header">
+                    <span class="section-tag eyebrow">Inference response / completed</span>
+                    <span class="result-status">
+                        {% if probability > 0.5 %}Above decision threshold{% else %}At or below decision threshold{% endif %}
+                    </span>
+                </div>
+
+                <div class="result-body">
+                    <div class="result-metric">
+                        <span class="metric-caption">Predicted class</span>
+                        <span class="metric-value" id="resultHeading">{{ prediction }}</span>
+                    </div>
+                    <div class="result-metric">
+                        <span class="metric-caption">Estimated probability</span>
+                        <span class="metric-value highlight">{{ "%.1f"|format(probability * 100) }}%</span>
+                    </div>
+                </div>
+
+                <div class="probability-heading">
+                    <span>Model probability</span>
+                    <span>{{ "%.1f"|format(probability * 100) }} / 100</span>
+                </div>
+                <div class="probability-track"
+                     role="progressbar"
+                     aria-label="Estimated attrition probability"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     aria-valuenow="{{ '%.1f'|format(probability * 100) }}">
+                    <div class="probability-fill" id="probabilityFill"
+                         data-probability="{{ probability * 100 }}"></div>
+                </div>
+
+                <p class="result-disclaimer">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M12 11v5m0-8h.01"></path>
+                    </svg>
+                    <span>
+                        This value represents the model's estimated probability for the positive class, assuming
+                        your Flask application calculates it using the trained pipeline. The 0.50 threshold is a
+                        classification rule, not a validated HR risk boundary. Model performance and calibration
+                        determine how this estimate should be interpreted.
+                    </span>
+                </p>
+            </section>
+            {% endif %}
+        </section>
+
+        <aside class="side-panel" aria-label="Model documentation and guidance">
+            <section class="side-section">
+                <span class="section-tag eyebrow">Reference / 01</span>
+                <h3>Before you run it.</h3>
+                <p class="side-intro">
+                    The model expects feature names and values that match its training pipeline.
+                </p>
+
+                <ul class="guidance-list">
+                    <li>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path d="m5 12 4 4L19 6"></path>
+                        </svg>
+                        <span><strong>Categories.</strong> Use the supplied options, which should match the values accepted by your model.</span>
+                    </li>
+                    <li>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path d="m5 12 4 4L19 6"></path>
+                        </svg>
+                        <span><strong>Ordinal ratings.</strong> Satisfaction and involvement use dataset levels from 1 to 4.</span>
+                    </li>
+                    <li>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path d="m5 12 4 4L19 6"></path>
+                        </svg>
+                        <span><strong>Numeric fields.</strong> Enter non-negative whole numbers within plausible dataset ranges.</span>
+                    </li>
+                    <li>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path d="m5 12 4 4L19 6"></path>
+                        </svg>
+                        <span><strong>Consistency.</strong> Keep career durations logically consistent, such as years in a role not exceeding total tenure.</span>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="schema-section" aria-labelledby="schemaHeading">
+                <span class="section-tag eyebrow">Reference / 02</span>
+                <h3 id="schemaHeading">Output schema.</h3>
+
+                <div class="schema-row">
+                    <span class="schema-label">Target</span>
+                    <span class="schema-value">Attrition — Yes / No</span>
+                </div>
+                <div class="schema-row">
+                    <span class="schema-label">Model family</span>
+                    <span class="schema-value">Logistic Regression</span>
+                </div>
+                <div class="schema-row">
+                    <span class="schema-label">Probability range</span>
+                    <span class="schema-value">0.0 — 1.0</span>
+                </div>
+
+                <p class="schema-note">
+                    The predicted label depends on the model and the decision threshold used in your backend.
+                </p>
+            </section>
+
+            <section class="responsible-note">
+                <div class="responsible-title">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"></path>
+                        <path d="m9 12 2 2 4-4"></path>
+                    </svg>
+                    Responsible AI boundary
+                </div>
+                <p>
+                    This project is an educational demonstration. Predictions can reflect limitations or biases
+                    in the training data. Do not use them as the sole basis for hiring, termination, promotion,
+                    or employee evaluation.
+                </p>
+            </section>
+        </aside>
+    </main>
+
+    <footer class="footer">
+        <div class="shell footer-inner">
+            <a class="brand" href="{{ url_for('home') }}" aria-label="AttritionIQ home">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 17l6-6 4 4 8-9"></path>
+                        <path d="M15 6h6v6"></path>
+                    </svg>
+                </span>
+                <span class="brand-name">Attrition<span>IQ.</span></span>
+            </a>
+
+            <p class="footer-copy">IBM HR Analytics · Flask · Scikit-learn · Educational prototype</p>
+
+            <a  href="https://github.com/Mrincxyl">
+        GitHub Link
+      </a>
+      <a  href="https://www.linkedin.com/in/raihanxsk/">
+        LinkedIn
+      </a>
+
+            <a class="footer-link" href="{{ url_for('home') }}">
+                Back to overview
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path d="M12 19V5m-7 7 7-7 7 7"></path>
+                </svg>
+            </a>
+        </div>
+    </footer>
+
+    <script>
+        (() => {
+            "use strict";
+
+            const progressBar = document.getElementById("scrollProgress");
+            const form = document.getElementById("inferenceForm");
+            const submitButton = document.getElementById("submitButton");
+            const probabilityFill = document.getElementById("probabilityFill");
+            const result = document.getElementById("predictionResult");
+
+            // Keep the top progress indicator in sync with document scrolling.
+            const updateScrollProgress = () => {
+                if (!progressBar) return;
+
+                const scrollableHeight =
+                    document.documentElement.scrollHeight - window.innerHeight;
+
+                const progress = scrollableHeight > 0
+                    ? (window.scrollY / scrollableHeight) * 100
+                    : 0;
+
+                progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+            };
+
+            window.addEventListener("scroll", updateScrollProgress, { passive: true });
+            window.addEventListener("resize", updateScrollProgress);
+            updateScrollProgress();
+
+            // Animate the server-rendered probability after the result enters the page.
+            if (probabilityFill) {
+                const rawProbability = Number(probabilityFill.dataset.probability);
+                const percentage = Number.isFinite(rawProbability)
+                    ? Math.min(100, Math.max(0, rawProbability))
+                    : 0;
+
+                requestAnimationFrame(() => {
+                    probabilityFill.style.width = `${percentage}%`;
+                });
+            }
+
+            // Prevent accidental double submissions without interfering with Flask validation.
+            if (form && submitButton) {
+                form.addEventListener("submit", (event) => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        form.reportValidity();
+                        return;
+                    }
+
+                    if (submitButton.dataset.submitting === "true") {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    submitButton.dataset.submitting = "true";
+                    submitButton.classList.add("is-loading");
+                    submitButton.disabled = true;
+
+                    const label = submitButton.querySelector(".submit-text");
+                    const arrow = submitButton.querySelector(".submit-arrow");
+
+                    if (label) label.textContent = "Running model…";
+                    if (arrow) arrow.style.display = "none";
+                });
+            }
+
+            // Bring the completed result into view after a Flask POST response.
+            if (result) {
+                result.setAttribute("tabindex", "-1");
+
+                if (window.location.hash !== "#predictionResult") {
+                    result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+            }
+        })();
+    </script>
+</body>
+</html>
