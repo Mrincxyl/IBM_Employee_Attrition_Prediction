@@ -119,7 +119,7 @@ Precision, recall, F1-score, confusion matrix and ROC-AUC
 
 Because employees who leave represent the minority class, recall for `Attrition = Yes` is particularly important. A high accuracy score alone does not mean that the model reliably identifies employees who leave.
 
-### 9. Model Saving
+### 10. Model Saving
 
 The trained pipeline is serialized to a `.dill` file in the main project's `models/` directory. Flask loads this saved pipeline to make predictions on new input data.
 

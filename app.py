@@ -6,7 +6,6 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR/"models"/"attrition_logistic_regression.dill"
 
-
 with open(MODEL_PATH, "rb") as f:
    model= dill.load(f)
    
