@@ -226,6 +226,10 @@ Potential extensions include:
 
 Developed as a machine learning project focused on employee attrition analysis, predictive modeling, and Flask web application development.
 
+## Live Demo
+
+https://ibm-employee-attrition-prediction.onrender.com/
+
 ## License
 
 Choose and add an appropriate open-source license before distributing this project publicly. Check the dataset's applicable terms separately.
